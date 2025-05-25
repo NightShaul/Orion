@@ -98,34 +98,34 @@ task.spawn(function()
 end)
 
 local function AddDraggingFunctionality(DragPoint, Main)
-	pcall(function()
-		local Dragging, DragInput, MousePos, FramePos = false
-		DragPoint.InputBegan:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-				Dragging = true
-				MousePos = Input.Position
-				FramePos = Main.Position
+    pcall(function()
+        local Dragging, DragInput, MousePos, FramePos = false
+        DragPoint.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                Dragging = true
+                MousePos = Input.Position
+                FramePos = Main.Position
 
-				Input.Changed:Connect(function()
-					if Input.UserInputState == Enum.UserInputState.End then
-						Dragging = false
-					end
-				end)
-			end
-		end)
-		DragPoint.InputChanged:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseMovement then
-				DragInput = Input
-			end
-		end)
-		UserInputService.InputChanged:Connect(function(Input)
-			if Input == DragInput and Dragging then
-				local Delta = Input.Position - MousePos
-				TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position  = UDim2.new(FramePos.X.Scale,FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)}):Play()
-			end
-		end)
-	end)
-end   
+                Input.Changed:Connect(function()
+                    if Input.UserInputState == Enum.UserInputState.End then
+                        Dragging = false
+                    end
+                end)
+            end
+        end)
+        DragPoint.InputChanged:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+                DragInput = Input
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(Input)
+            if Input == DragInput and Dragging then
+                local Delta = Input.Position - MousePos
+                Main.Position = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+            end
+        end)
+    end)
+end
 
 local function Create(Name, Properties, Children)
 	local Object = Instance.new(Name)
@@ -468,6 +468,54 @@ function OrionLib:MakeWindow(WindowConfig)
 	local Minimized = false
 	local Loaded = false
 	local UIHidden = false
+
+        local MobileOpenBtn = SetChildren(SetProps(MakeElement("Button"), {
+    Size = UDim2.new(0, 40, 0, 40),
+    Position = UDim2.new(0, 10, 0, 10),
+    BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+    Visible = false,
+    Parent = Orion
+}, {
+    MakeElement("Corner", 0, 8),
+    AddThemeObject(SetProps(MakeElement("Label", "+", 20), {
+        Size = UDim2.new(1, 0, 1, 0),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true
+    }), "Text"),
+    AddThemeObject(MakeElement("Stroke"), "Stroke")
+})
+
+local MobileCloseBtn = SetChildren(SetProps(MakeElement("Button"), {
+    Size = UDim2.new(0, 40, 0, 40),
+    Position = UDim2.new(0, 10, 0, 10),
+    BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+    Parent = MainWindow
+}, {
+    MakeElement("Corner", 0, 8),
+    AddThemeObject(SetProps(MakeElement("Label", "-", 20), {
+        Size = UDim2.new(1, 0, 1, 0),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true
+    }), "Text"),
+    AddThemeObject(MakeElement("Stroke"), "Stroke")
+})
+
+local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+
+if isMobile then
+    MobileOpenBtn.Visible = true
+    MainWindow.Visible = false
+    
+    AddConnection(MobileOpenBtn.MouseButton1Click, function()
+        MobileOpenBtn.Visible = false
+        MainWindow.Visible = true
+    end)
+    
+    AddConnection(MobileCloseBtn.MouseButton1Click, function()
+        MainWindow.Visible = false
+        MobileOpenBtn.Visible = true
+    end)
+end
 
 	WindowConfig = WindowConfig or {}
 	WindowConfig.Name = WindowConfig.Name or "Orion Library"
